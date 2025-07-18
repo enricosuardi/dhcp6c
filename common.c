@@ -1909,9 +1909,28 @@ dhcp6_get_options(struct dhcp6opt *p, struct dhcp6opt *ep,
 
 		default:
 			/* no option specific behavior */
-			d_printf(LOG_INFO, FNAME,
-			    "unknown or unexpected DHCP6 option %s, len %d",
-			    dhcp6optstr(opt), optlen);
+			struct rawoption *op;
+			if ((op = malloc(sizeof(*op))) == NULL) {
+				d_printf(LOG_ERR, FNAME,
+					"failed to allocate memory for a new raw option");
+				return(-1);
+			}
+
+			memset(op, 0, sizeof(*op));
+
+			op->opnum = opt;
+			op->datalen = optlen;
+
+			/* copy data */
+			if ((op->data = malloc(op->datalen)) == NULL) {
+				d_printf(LOG_ERR, FNAME,
+				    "failed to allocate memory for new raw option data");
+				return(-1);
+			}
+			memcpy(op->data, cp, op->datalen);
+
+			TAILQ_INSERT_TAIL(&optinfo->rawops, op, link);
+
 			break;
 		}
 	}
